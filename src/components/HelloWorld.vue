@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Octokit, App } from "https://cdn.skypack.dev/octokit";
-import { decode,encode } from 'js-base64';
-import { onMounted, ref,computed } from "vue";
+import { decode, encode } from 'js-base64';
+import { onMounted, ref, computed } from "vue";
 import { marked } from 'marked'
 
 defineProps<{ msg: string }>();
@@ -12,8 +12,8 @@ const octokit = new Octokit({
   auth: "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",
 });
 const owner = "qixiaobro",
-    repo = "test-git-note",
-    perPage = 5;
+  repo = "test-git-note",
+  perPage = 5;
 const getCommit = async () => {
 
 
@@ -28,7 +28,7 @@ const getCommit = async () => {
 const getTrees = async () => {
   const fiveMostRecentCommits = await octokit.request(
     `GET /repos/{owner}/{repo}/git/trees/{tree_sha}{?recursive}{?timestamp}`,
-    { owner, repo, tree_sha: "main", recursive: 1,timestamp: new Date().getTime() }
+    { owner, repo, tree_sha: "main", recursive: 1, timestamp: new Date().getTime() }
   );
   console.log(fiveMostRecentCommits);
 };
@@ -58,7 +58,26 @@ const fileName = ref('')
 const createFile = async () => {
   const res = await octokit.request(
     `PUT /repos/{owner}/{repo}/contents/{path}`,
-    { owner, repo, path: fileName.value,message:'update', content: encode("hello world"), encoding: "base64" }
+    { owner, repo, path: fileName.value, message: 'update', content: encode("hello world"), encoding: "base64" }
+  );
+  console.log(res);
+  getTrees()
+};
+
+// 创建文件夹
+const dirName = ref('')
+const createDir = async () => {
+  const res = await octokit.request(
+    `POST /repos/{owner}/{repo}/git/trees`,
+    {
+      owner, repo, tree: [
+        {
+          path: dirName,
+          mode: '040000',
+          type: 'tree',
+        }
+      ]
+    }
   );
   console.log(res);
   getTrees()
@@ -70,9 +89,11 @@ onMounted(() => {
 </script>
 
 <template>
- <article v-html="output"></article>
- <input v-model="fileName"/>
- <button @click="createFile">create a file</button>
+  <article v-html="output"></article>
+  <input v-model="fileName" />
+  <button @click="createFile">create a file</button>
+  <input v-model="dirName" />
+  <button @click="createDir">createDir</button>
 </template>
 
 <style scoped>
